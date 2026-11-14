@@ -47,8 +47,8 @@ reopening the track as PCM. Tested: Disney+, Netflix, YouTube. Not tested: Max, 
 reopens offload again is left alone after one try, so it plays normally with a fixed level. Check any app with
 `adb shell dumpsys media.audio_flinger`: an active track on the `MIXER` thread is controlled.
 
-**Passthrough audio.** Set the TV's digital output to **PCM**. In Auto or Bypass the TV sends the encoded Dolby
-stream and nothing on the TV can change its level.
+**Passthrough audio.** Set the TV's digital output to **PCM**. With an encoded (passthrough) setting the TV sends the
+Dolby stream as it is, and nothing on the TV can change its level.
 
 ## When it is useful
 
