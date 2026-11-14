@@ -11,7 +11,9 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
 import android.media.audiofx.DynamicsProcessing;
+import android.media.audiofx.LoudnessEnhancer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -27,6 +29,10 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Maps the remote's volume keys to a digital gain on Android's output mix, so the optical output follows them
@@ -63,6 +69,7 @@ public class VolumeService extends AccessibilityService
     private static final long OSD_MS = 4000;
     private static final long PRESS_GAP_MS = 120, HOLD_MS = 450, REPEAT_MS = 120, STOP_MS = 160;
     private static final long ECHO_AFTER_UP_MS = 400, ECHO_AFTER_MUTE_MS = 150, ECHO_AFTER_SELF_MS = 300;
+    private static final long REARM_DELAY_MS = 1500, REARM_HOLD_MS = 300, REARM_QUIET_MS = 5000;
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private HandlerThread workerThread;
@@ -82,6 +89,8 @@ public class VolumeService extends AccessibilityService
     private int rampToken;
 
     private long lastUpEvt = -1, lastDownEvt = -1, downPressStart = -1, lastMuteEvt = -1;
+    private final Set<Integer> playing = new HashSet<>();
+    private long lastRearm = -1;
     private boolean downHolding;
 
     private WindowManager wm;
@@ -125,6 +134,7 @@ public class VolumeService extends AccessibilityService
         } else {
             registerReceiver(receiver, filter);
         }
+        am.registerAudioPlaybackCallback(playbackCallback, main);
         try {
             buildOsd();
         } catch (RuntimeException e) {
@@ -148,6 +158,7 @@ public class VolumeService extends AccessibilityService
 
     @Override public void onDestroy() {
         main.removeCallbacksAndMessages(null);
+        if (am != null) am.unregisterAudioPlaybackCallback(playbackCallback);
         if (prefs != null) prefs.unregisterOnSharedPreferenceChangeListener(this);
         try {
             unregisterReceiver(receiver);
@@ -231,6 +242,52 @@ public class VolumeService extends AccessibilityService
         worker.post(() -> prefs.edit().putInt(K_TV_INDEX, am.getStreamVolume(AudioManager.STREAM_MUSIC)).apply());
         sync();
     }
+
+    // Offloaded playback
+
+    /**
+     * Some apps (Disney+) send Dolby Digital Plus to a compress-offload output, which the chip decodes and the mix
+     * never sees. Enabling a non-offloadable effect invalidates such a track; media3 treats that as recoverable and
+     * reopens it as PCM through the mixer, where the gain applies. So a short-lived neutral effect is enabled
+     * shortly after each new player starts.
+     */
+    private final AudioManager.AudioPlaybackCallback playbackCallback = new AudioManager.AudioPlaybackCallback() {
+        @Override public void onPlaybackConfigChanged(List<AudioPlaybackConfiguration> configs) {
+            Set<Integer> now = new HashSet<>();
+            boolean started = false;
+            for (AudioPlaybackConfiguration c : configs) {
+                if (c.getAudioAttributes().getUsage() != android.media.AudioAttributes.USAGE_MEDIA) continue;
+                int id = c.hashCode();   // includes the player id, stable for the player's lifetime
+                now.add(id);
+                if (!playing.contains(id)) started = true;
+            }
+            playing.clear();
+            playing.addAll(now);
+            // The player an app reopens after a rearm is its recovery: rearming it again could loop.
+            boolean recovering = lastRearm >= 0 && SystemClock.uptimeMillis() - lastRearm < REARM_QUIET_MS;
+            if (started && !recovering && enabled && !onExternalInput()) {
+                main.removeCallbacks(rearm);
+                main.postDelayed(rearm, REARM_DELAY_MS);
+            }
+        }
+    };
+
+    private final Runnable rearm = () -> {
+        if (!enabled || onExternalInput()) return;
+        try {
+            // A different effect type: a second DynamicsProcessing on session 0 would share the main one.
+            LoudnessEnhancer nudge = new LoudnessEnhancer(0);
+            nudge.setTargetGain(0);
+            nudge.setEnabled(true);
+            lastRearm = SystemClock.uptimeMillis();
+            main.postDelayed(() -> {
+                nudge.setEnabled(false);
+                nudge.release();
+            }, REARM_HOLD_MS);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "rearm failed", e);
+        }
+    };
 
     // Volume keys, as seen through AudioService broadcasts
 

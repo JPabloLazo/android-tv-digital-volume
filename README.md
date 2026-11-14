@@ -27,6 +27,10 @@ With speakers or a DAC on the optical output, the only volume control left is th
   (30 steps of 1.5 dB) and puts the media volume straight back to 0, so the TV speakers stay silent.
 - Its own volume bar sits over the system one, which no app can turn off.
 - Mute toggles the digital level as well.
+- Some apps (Disney+) send Dolby Digital Plus to a compress-offload output that the chip decodes, past the mix.
+  Shortly after a new player starts, the app enables a neutral effect for a moment. Android invalidates offloaded
+  tracks when a non-offloadable effect is enabled, and media3 (the player Disney+ uses) recovers by reopening the
+  track as PCM through the mixer, where the gain applies. You see a short buffering pause at the start of each title.
 
 ## What it cannot do
 
@@ -38,13 +42,10 @@ screen lets you pick what the keys do there:
   remembered separately from the apps' level.
 - **Fixed**: the TV speakers stay off; control the volume on the connected device or on the amplifier.
 
-**Apps that send Dolby Digital Plus to the chip.** Disney+ plays its 5.1 E-AC3 track through a compress-offload
-output (`AudioOut_* type 4 (OFFLOAD)`, format `0x0A000001`): the MediaTek chip decodes it, so it never passes the mix
-either. Setting "Surround sound formats" to None did not change that, since the app checks whether the chip can
-play E-AC3 directly, and holding the direct outputs busy only makes playback fail (`AudioTrack init failed` for
-`audio/eac3`): the app does not fall back to PCM. Turning Dolby Atmos off in the Disney+ settings does not change
-the track either. Its stereo AAC clips (extras) do go through the mixer and are
-controlled. Netflix and YouTube play PCM through the mixer and are controlled as expected.
+**Apps whose player does not fall back to PCM.** The offload workaround above relies on the app's player
+reopening the track as PCM. Tested: Disney+, Netflix, YouTube. Not tested: Max, Prime Video and others. An app that
+reopens offload again is left alone after one try, so it plays normally with a fixed level. Check any app with
+`adb shell dumpsys media.audio_flinger`: an active track on the `MIXER` thread is controlled.
 
 **Passthrough audio.** Set the TV's digital output to **PCM**. In Auto or Bypass the TV sends the encoded Dolby
 stream and nothing on the TV can change its level.
@@ -54,9 +55,7 @@ stream and nothing on the TV can change its level.
 - Your TV feeds powered speakers, a DAC or an amplifier through the optical output, and the TV volume does not change
   what you hear there.
 - Your amplifier has no ARC/CEC, so the TV remote cannot control it.
-- Most of what you watch plays in TV apps that output PCM (Netflix and YouTube here). Check yours with
-  `adb shell dumpsys media.audio_flinger`: an active track on the `MIXER` thread can be controlled, one on an
-  `OFFLOAD` or `DIRECT` thread cannot.
+- Most of what you watch plays in apps on the TV itself (Netflix, YouTube, Disney+ here).
 
 ## Tested on
 
@@ -86,7 +85,8 @@ To remove it: `./install.sh --uninstall`.
 
 ## Permissions and privacy
 
-- `MODIFY_AUDIO_SETTINGS`: the gain effect and the media volume reset.
+- `MODIFY_AUDIO_SETTINGS`: the gain effect, the media volume reset and the short neutral effect for offloaded
+  tracks. `registerAudioPlaybackCallback` (no permission) tells it when a player starts.
 - Accessibility service: only window-change events, to know whether an app or an input is in front and to show the
   volume bar over the system one. It does not read screen content or filter keys.
 - No internet permission. Nothing leaves the TV.
