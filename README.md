@@ -41,7 +41,9 @@ screen lets you pick what the keys do there:
 **Apps that send Dolby Digital Plus to the chip.** Disney+ plays its 5.1 E-AC3 track through a compress-offload
 output (`AudioOut_* type 4 (OFFLOAD)`, format `0x0A000001`): the MediaTek chip decodes it, so it never passes the mix
 either. Setting "Surround sound formats" to None did not change that, since the app checks whether the chip can
-play E-AC3 directly. Netflix and YouTube play PCM through the mixer and are controlled as expected.
+play E-AC3 directly, and holding the direct outputs busy only makes playback fail (`AudioTrack init failed` for
+`audio/eac3`): the app does not fall back to PCM. Its stereo AAC clips (extras) do go through the mixer and are
+controlled. Netflix and YouTube play PCM through the mixer and are controlled as expected.
 
 **Passthrough audio.** Set the TV's digital output to **PCM**. In Auto or Bypass the TV sends the encoded Dolby
 stream and nothing on the TV can change its level.
