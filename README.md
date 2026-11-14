@@ -38,6 +38,11 @@ screen lets you pick what the keys do there:
   remembered separately from the apps' level.
 - **Fixed**: the TV speakers stay off; control the volume on the connected device or on the amplifier.
 
+**Apps that send Dolby Digital Plus to the chip.** Disney+ plays its 5.1 E-AC3 track through a compress-offload
+output (`AudioOut_* type 4 (OFFLOAD)`, format `0x0A000001`): the MediaTek chip decodes it, so it never passes the mix
+either. Setting "Surround sound formats" to None did not change that, since the app checks whether the chip can
+play E-AC3 directly. Netflix and YouTube play PCM through the mixer and are controlled as expected.
+
 **Passthrough audio.** Set the TV's digital output to **PCM**. In Auto or Bypass the TV sends the encoded Dolby
 stream and nothing on the TV can change its level.
 
@@ -46,7 +51,9 @@ stream and nothing on the TV can change its level.
 - Your TV feeds powered speakers, a DAC or an amplifier through the optical output, and the TV volume does not change
   what you hear there.
 - Your amplifier has no ARC/CEC, so the TV remote cannot control it.
-- Most of what you watch plays in apps on the TV itself (Netflix, YouTube, Disney+, Max, Prime Video...).
+- Most of what you watch plays in TV apps that output PCM (Netflix and YouTube here). Check yours with
+  `adb shell dumpsys media.audio_flinger`: an active track on the `MIXER` thread can be controlled, one on an
+  `OFFLOAD` or `DIRECT` thread cannot.
 
 ## Tested on
 
