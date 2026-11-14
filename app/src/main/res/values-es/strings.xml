@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Volumen digital</string>
+    <string name="a11y_desc">Hace que los botones de volumen del control manejen la salida óptica (S/PDIF) en las apps, con los parlantes de la TV apagados.</string>
+    <string name="osd_label">Volumen</string>
+    <string name="osd_mute">Silencio</string>
+    <string name="osd_external">Entrada externa</string>
+    <string name="osd_fixed">Fijo</string>
+    <string name="set_enabled">Volumen digital</string>
+    <string name="set_external">En HDMI, AV y TV en vivo</string>
+    <string name="on">Activado</string>
+    <string name="off">Desactivado</string>
+    <string name="external_tv">Control de la TV</string>
+    <string name="external_fixed">Fijo</string>
+    <string name="status_level">Nivel en apps: %1$d de %2$d</string>
+    <string name="status_service_off">El servicio de accesibilidad está apagado: activalo en Ajustes &gt; Accesibilidad</string>
+    <string name="set_help">Volumen digital: en las apps (Netflix, YouTube…) los botones de volumen del control manejan la salida óptica y los parlantes de la TV quedan apagados. Desactivado: la TV funciona como de fábrica.\n\nEn HDMI, AV y TV en vivo el sonido no pasa por Android, así que no se puede manejar digitalmente. Control de la TV: ahí los botones manejan los parlantes de la TV, con su propio volumen recordado. Fijo: los parlantes de la TV quedan apagados y el volumen se maneja desde el dispositivo conectado o el equipo de audio.</string>
+</resources>

@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Digital Volume</string>
+    <string name="a11y_desc">Lets the remote\'s volume keys control the optical (S/PDIF) output in apps, with the TV speakers kept silent.</string>
+    <string name="osd_label">Volume</string>
+    <string name="osd_mute">Muted</string>
+    <string name="osd_external">External input</string>
+    <string name="osd_fixed">Fixed</string>
+    <string name="set_enabled">Digital volume</string>
+    <string name="set_external">On HDMI, AV and Live TV</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="external_tv">TV control</string>
+    <string name="external_fixed">Fixed</string>
+    <string name="status_level">Level in apps: %1$d of %2$d</string>
+    <string name="status_service_off">The accessibility service is off: turn it on in Settings &gt; Accessibility</string>
+    <string name="set_help">Digital volume: in apps (Netflix, YouTube…) the remote\'s volume keys control the optical output and the TV speakers stay off. Off: the TV works as it came from the factory.\n\nHDMI, AV and Live TV audio does not pass through Android, so it cannot be controlled digitally. TV control: there the keys drive the TV speakers, with their own remembered volume. Fixed: the TV speakers stay off; use the connected device or your audio system for volume.</string>
+</resources>
